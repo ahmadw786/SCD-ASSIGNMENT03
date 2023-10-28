@@ -1,1 +1,356 @@
-import java.util.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.*;
+import java.util.Vector;
+import javax.swing.table.TableCellRenderer;
+
+public class LibraryManagementSystem {
+    private JFrame frame;
+    private JTable table;
+    private DefaultTableModel tableModel;
+    
+    int hoveredRow = -1;
+
+    public LibraryManagementSystem() {
+        frame = new JFrame("Library Management System");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 400);
+        
+        
+        
+         frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                int confirmed = JOptionPane.showConfirmDialog(frame, "Do you want to exit the application?", "Confirm Exit", JOptionPane.YES_NO_OPTION);
+                if (confirmed == JOptionPane.YES_OPTION) {
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                }
+            }
+        });
+
+        // Create a table model and add columns
+        tableModel = new DefaultTableModel();
+        tableModel.addColumn("Title");
+        tableModel.addColumn("Author");
+        tableModel.addColumn("Publication Year");
+        tableModel.addColumn("Read Item");
+
+        // Create a JTable with the table model
+        table = new JTable(tableModel);
+
+        // Load data from the file at the beginning of the program
+        loadLibraryDataFromFile();
+
+        // Add buttons for operations
+        JButton addButton = new JButton("Add Item");
+        JButton editButton = new JButton("Edit Item");
+        JButton deleteButton = new JButton("Delete Item");
+        
+         table.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
+
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                showAddItemDialog();
+            }
+        });
+
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow >= 0) {
+                    showEditItemDialog(selectedRow);
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Select an item to edit.");
+                }
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow >= 0) {
+                    tableModel.removeRow(selectedRow);
+                    saveLibraryDataToFile();
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Select an item to delete.");
+                }
+            }
+        });
+        
+        table.getColumnModel().getColumn(3).setCellRenderer(new ButtonRenderer());
+        table.getColumnModel().getColumn(3).setCellEditor(new ButtonEditor(new JCheckBox()));
+        
+        
+       
+
+table.addMouseMotionListener(new MouseAdapter() {
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        int row = table.rowAtPoint(e.getPoint());
+        if (row != hoveredRow) {
+            // Clear the previous hover highlight
+            if (hoveredRow >= 0) {
+                table.setRowSelectionInterval(hoveredRow, hoveredRow);
+            }
+            hoveredRow = row;
+            table.setRowSelectionInterval(hoveredRow, hoveredRow);
+        }
+    }
+});
+
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(addButton);
+        buttonPanel.add(editButton);
+        buttonPanel.add(deleteButton);
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.add(mainPanel);
+        frame.setVisible(true);
+    }
+    
+     
+      
+  class ButtonRenderer extends JButton implements TableCellRenderer {
+        public ButtonRenderer() {
+            setOpaque(true);
+        }
+
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText("Read");
+            return this;
+        }
+    }
+  
+  
+  class ButtonEditor extends DefaultCellEditor {
+        private JButton button;
+        private String label;
+        private boolean isPushed;
+
+        public ButtonEditor(JCheckBox checkBox) {
+            super(checkBox);
+            button = new JButton();
+            button.setOpaque(true);
+            button.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    fireEditingStopped();
+                }
+            });
+        }
+        
+        
+        
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            if (isSelected) {
+                button.setForeground(table.getSelectionForeground());
+                button.setBackground(table.getSelectionBackground());
+            } else {
+                button.setForeground(table.getForeground());
+                button.setBackground(table.getBackground());
+            }
+            label = (value == null) ? "" : value.toString();
+            button.setText(label);
+            isPushed = true;
+            return button;
+        }
+
+        public Object getCellEditorValue() {
+            if (isPushed) {
+                // Get the selected row
+                int selectedRow = table.getSelectedRow();
+                String title = (String) tableModel.getValueAt(selectedRow, 0);
+                openReadItemDialog(title);
+            }
+            isPushed = false;
+            return label;
+        }
+
+
+        private void openReadItemDialog(String title) {
+        // You can implement code here to open a window or dialog to read the book content
+        // For this example, let's show a simple message
+        JOptionPane.showMessageDialog(frame, "Reading book: " + title);
+    }
+
+        
+          public boolean stopCellEditing() {
+            isPushed = false;
+            return super.stopCellEditing();
+        }
+
+        protected void fireEditingStopped() {
+            super.fireEditingStopped();
+        }
+    }
+      
+      
+        
+
+   private void showAddItemDialog() {
+    // Create input fields for the new item
+    JTextField titleField = new JTextField(20);
+    JTextField authorField = new JTextField(20);
+    JTextField yearField = new JTextField(4);
+
+    // Create a panel with the input fields
+    JPanel panel = new JPanel(new GridLayout(3, 2));
+    panel.add(new JLabel("Title:"));
+    panel.add(titleField);
+    panel.add(new JLabel("Author:"));
+    panel.add(authorField);
+    panel.add(new JLabel("Publication Year:"));
+    panel.add(yearField);
+
+    // Show a dialog with the input fields
+    int result = JOptionPane.showConfirmDialog(frame, panel, "Add New Item", JOptionPane.OK_CANCEL_OPTION);
+
+    if (result == JOptionPane.OK_OPTION) {
+        // Get the values from the input fields
+        String title = titleField.getText();
+        String author = authorField.getText();
+        int year;
+
+        // Validate and parse the year field
+        try {
+            year = Integer.parseInt(yearField.getText());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(frame, "Invalid year. Please enter a valid number.");
+            return;
+        }
+
+        // Add the new item to the table and save the data to the file
+        Vector<String> row = new Vector<>();
+        row.add(title);
+        row.add(author);
+        row.add(String.valueOf(year));
+        tableModel.addRow(row);
+
+        saveLibraryDataToFile();
+    }
+}
+
+   private void showEditItemDialog(int row) {
+    if (row < 0 || row >= tableModel.getRowCount()) {
+        return;
+    }
+
+    // Get the existing item's data from the selected row
+    String title = (String) tableModel.getValueAt(row, 0);
+    String author = (String) tableModel.getValueAt(row, 1);
+    String year = (String) tableModel.getValueAt(row, 2);
+
+    // Create input fields to edit the item
+    JTextField titleField = new JTextField(20);
+    JTextField authorField = new JTextField(20);
+    JTextField yearField = new JTextField(4);
+
+    // Pre-fill the input fields with the existing item's data
+    titleField.setText(title);
+    authorField.setText(author);
+    yearField.setText(year);
+
+    // Create a panel with the input fields
+    JPanel panel = new JPanel(new GridLayout(3, 2));
+    panel.add(new JLabel("Title:"));
+    panel.add(titleField);
+    panel.add(new JLabel("Author:"));
+    panel.add(authorField);
+    panel.add(new JLabel("Publication Year:"));
+    panel.add(yearField);
+
+    // Show a dialog with the input fields
+    int result = JOptionPane.showConfirmDialog(frame, panel, "Edit Item", JOptionPane.OK_CANCEL_OPTION);
+
+    if (result == JOptionPane.OK_OPTION) {
+        // Get the values from the input fields
+        String newTitle = titleField.getText();
+        String newAuthor = authorField.getText();
+        String newYear = yearField.getText();
+
+        // Update the item's data in the table
+        tableModel.setValueAt(newTitle, row, 0);
+        tableModel.setValueAt(newAuthor, row, 1);
+        tableModel.setValueAt(newYear, row, 2);
+
+        // Save the updated data to the file
+        saveLibraryDataToFile();
+    }
+}
+
+
+    private void saveLibraryDataToFile() {
+    File file = new File("data1.txt");  // Specify the path to your data file
+
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+        for (int row = 0; row < tableModel.getRowCount(); row++) {
+            String title = (String) tableModel.getValueAt(row, 0);
+            String author = (String) tableModel.getValueAt(row, 1);
+            String year = (String) tableModel.getValueAt(row, 2);
+
+            // Write the data to the file in a comma-separated format
+            writer.write(title + ", " + author + ", " + year);
+            writer.newLine();  // Move to the next line for the next item
+        }
+    } catch (IOException e) {
+        // Handle file write error, e.g., show a message to the user
+        JOptionPane.showMessageDialog(frame, "Error saving data to the file: " + e.getMessage());
+    }
+}
+
+    
+    private void loadLibraryDataFromFile() {
+    File file = new File("data1.txt");  // Specify the path to your data file
+
+    if (!file.exists()) {
+        // Handle the case when the file doesn't exist
+        // You can create an empty file or show a message to the user
+        // Example: file.createNewFile();
+        return;
+    }
+
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            // Parse the line into title, author, and year
+            String[] parts = line.split(",");
+            if (parts.length >= 3) {
+                String title = parts[0].trim();
+                String author = parts[1].trim();
+                String year = parts[2].trim();
+
+                // Add the data to the table
+                Vector<String> row = new Vector<>();
+                row.add(title);
+                row.add(author);
+                row.add(year);
+                tableModel.addRow(row);
+            }
+        }
+    } catch (IOException e) {
+        // Handle file read error, e.g., show a message to the user
+        e.printStackTrace(); // This will print the stack trace to help diagnose the issue
+        JOptionPane.showMessageDialog(frame, "Error loading data from the file: " + e.getMessage());
+    }
+}
+
+
+   
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new LibraryManagementSystem();
+            }
+        });
+    }
+}
