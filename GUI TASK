@@ -22,6 +22,14 @@ public class LibraryManagementSystem {
         frame = new JFrame("Library Management System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
+
+
+JButton viewPopularityButton = new JButton("View Popularity");
+viewPopularityButton.addActionListener(new ActionListener() {
+    public void actionPerformed(ActionEvent e) {
+        openPopularityChart();
+    }
+});
         
         
         
@@ -341,6 +349,38 @@ table.addMouseMotionListener(new MouseAdapter() {
         e.printStackTrace(); // This will print the stack trace to help diagnose the issue
         JOptionPane.showMessageDialog(frame, "Error loading data from the file: " + e.getMessage());
     }
+}
+
+
+  private void openPopularityChart() {
+    // Create a dataset for the popularity chart (you will need to customize this based on your data)
+    DefaultPieDataset dataset = new DefaultPieDataset();
+    
+    // Add data to the dataset (example data, replace with your actual data)
+    dataset.setValue("PF", 20);
+    dataset.setValue("SQE", 30);
+    dataset.setValue("TBW", 15);
+    
+    // Create a pie chart using JFreeChart
+    JFreeChart popularityChart = ChartFactory.createPieChart(
+        "Library Item Popularity",  // Chart title
+        dataset,                   // Dataset
+        true,                      // Include legend
+        true, false);
+    
+    // Customize the chart appearance here, if needed
+    
+    // Create a chart panel to display the chart
+    ChartPanel chartPanel = new ChartPanel(popularityChart);
+    chartPanel.setPreferredSize(new Dimension(600, 400));
+    
+    // Create a new frame for displaying the chart
+    JFrame chartFrame = new JFrame("Popularity Chart");
+    chartFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Close only this frame, not the entire application
+    chartFrame.add(chartPanel);
+    chartFrame.pack();
+    chartFrame.setLocationRelativeTo(null); // Center the frame on the screen
+    chartFrame.setVisible(true);
 }
 
 
